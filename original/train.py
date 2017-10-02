@@ -48,22 +48,17 @@ def train(train_iter, dev_iter, model, args, lg):
                                                                              corrects,
                                                                              batch.batch_size))
             if steps % args.test_interval == 0:
-                eval(dev_iter, model, args)
+                eval(dev_iter, model, args, steps, lg)
             if steps % args.save_interval == 0:
                 if not os.path.isdir(args.save_dir): os.makedirs(args.save_dir)
                 save_prefix = os.path.join(args.save_dir, 'snapshot')
                 save_path = '{}_steps{}.pt'.format(save_prefix, steps)
                 torch.save(model, save_path)
             
-            lg.scalar_summary("eval-acc", accuracy, steps)
-            lg.scalar_summary("eval-loss", loss.data[0], steps)
-            for tag, value in model.named_parameters():
-                tag = tag.replace('.', '/')
-                lg.histo_summary(tag, to_np(value), steps)
-                lg.histo_summary(tag+'/grad', to_np(value.grad), steps)
 
 
-def eval(data_iter, model, args):
+
+def eval(data_iter, model, args, steps, lg):
     model.eval()
     corrects, avg_loss = 0, 0
     for batch in data_iter:
@@ -83,6 +78,12 @@ def eval(data_iter, model, args):
     avg_loss = avg_loss/size
     accuracy = 100.0 * corrects/size
     model.train()
+    lg.scalar_summary("eval-acc", accuracy, steps)
+    lg.scalar_summary("eval-loss", loss.data[0], steps)
+    for tag, value in model.named_parameters():
+        tag = tag.replace('.', '/')
+        lg.histo_summary(tag, to_np(value), steps)
+        lg.histo_summary(tag+'/grad', to_np(value.grad), steps)
     print('\nEvaluation - loss: {:.6f}  acc: {:.4f}%({}/{}) \n'.format(avg_loss,
                                                                        accuracy,
                                                                        corrects,
