@@ -22,7 +22,7 @@ def active_train(data, params, lg):
     for j in range(params["N_AVERAGE"]):
         # model = CNN(data, params)
         model = RNN(params, data)
-        hidden = model.init_hidden()
+        hidden, c0 = model.init_hidden()
 
         if params["CUDA"]:
             model.cuda(params["DEVICE"])
@@ -83,8 +83,8 @@ def train(model, hidden, params, train_array):
     for e in range(params["EPOCH"]):
         for feature, target in train_array:
             optimizer.zero_grad()
-            hidden = model.init_hidden()
-            pred, hidden = model(feature, hidden)
+            hidden, c0 = model.init_hidden()
+            pred, hidden = model(feature, hidden, c0)
             loss = criterion(pred, target)
             loss.backward()
             optimizer.step()
@@ -113,8 +113,8 @@ def evaluate(data, model, params, lg, step, mode="test"):
             feature = feature.cuda(params["DEVICE"])
             target = target.cuda(params["DEVICE"])
 
-        hidden = model.init_hidden()
-        logit, hidden = model(feature, hidden)
+        hidden, c0 = model.init_hidden()
+        logit, hidden = model(feature, hidden, c0)
         loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
         avg_loss += loss.data[0]
         # print(torch.max(logit, 1)[1].view(target.size()).data)

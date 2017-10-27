@@ -34,7 +34,7 @@ def main():
     parser.add_argument('--average', type=int, default=1,
                         help='Number of runs to average [default: 1]')
 
-    parser.add_argument('--hidden', type=int, default=300,
+    parser.add_argument('--hidden', type=int, default=100,
                         help='Size of the hidden layer')
 
     options = parser.parse_args()

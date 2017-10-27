@@ -35,24 +35,30 @@ class RNN(nn.Module):
             wv_matrix = self.load_word2vec()
             self.embedding.weight.data.copy_(torch.from_numpy(wv_matrix))
         # self.rnn = nn.RNN(self.input_size, self.hidden_size, self.hidden_layers)
-        self.rnn = nn.GRU(self.input_size, self.hidden_size, self.hidden_layers)
-        self.i2o = nn.Linear(self.hidden_size, self.CLASS_SIZE)
+        self.rnn = nn.LSTM(self.input_size, self.hidden_size, self.hidden_layers, bidirectional=True,  dropout=0.5)
+        self.i2o = nn.Linear(self.hidden_size*2, self.CLASS_SIZE)
         self.softmax = nn.Softmax()
 
-    def forward(self, input, hidden):
+    def forward(self, input, hidden, c0):
         x = self.embedding(input).view(-1, self.WORD_DIM * self.MAX_SENT_LEN)
         x = x.unsqueeze(1)
-        output, hidden = self.rnn(x, hidden)
+        # h0 = Variable(torch.randn(2, 3, 20))
+        # c0 = Variable(torch.randn(self.hidden_layers, 1, self.hidden_size))
+        # if self.params["CUDA"]:
+        #     c0 = c0.cuda(self.params["DEVICE"])
+        output, hidden = self.rnn(x, (hidden, c0))
         output = output.squeeze(1)
         output = self.i2o(output)
         return output, hidden
 
     def init_hidden(self):
         # hidden = Variable(torch.zeros(self.hidden_layers, self.MAX_SENT_LEN, self.hidden_size))
-        hidden = Variable(torch.zeros(self.hidden_layers, 1, self.hidden_size))
+        hidden = Variable(torch.zeros(self.hidden_layers*2, 1, self.hidden_size))
+        c0 = Variable(torch.randn(self.hidden_layers*2, 1, self.hidden_size))        
         if self.params["CUDA"]:
             hidden = hidden.cuda(self.params["DEVICE"])
-        return hidden
+            c0 = c0.cuda(self.params["DEVICE"])
+        return hidden, c0
 
 
     """
